@@ -1,0 +1,33 @@
+name: Infra Cost Guard
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - 'scripts/verify-infra-cost-readme.mjs'
+      - '.github/workflows/infra-cost-guard.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+      - 'scripts/verify-infra-cost-readme.mjs'
+      - '.github/workflows/infra-cost-guard.yml'
+
+jobs:
+  verify-infra-cost-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify infra cost documentation updates
+        run: node scripts/verify-infra-cost-readme.mjs

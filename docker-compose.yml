@@ -1,0 +1,24 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    image: flashcards-postgres:local
+    container_name: flashcards-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flashcards
+      POSTGRES_PASSWORD: flashcards
+      POSTGRES_DB: flashcards_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - flashcards_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flashcards -d flashcards_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  flashcards_pgdata:

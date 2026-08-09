@@ -1,0 +1,8 @@
+.figma-import-root,
+.figma-import-root * {
+  scrollbar-width: none;
+}
+
+.figma-import-root *::-webkit-scrollbar {
+  display: none;
+}

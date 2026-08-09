@@ -1,0 +1,10 @@
+{
+  "description": "This flash card app helps users efficiently learn and memorize information through customizable flash cards, enhancing study sessions and retention.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

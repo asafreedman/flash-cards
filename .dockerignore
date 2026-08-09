@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+infra/.terraform
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/*.tfvars
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+Dockerfile.postgres
+Flash Card App.zip

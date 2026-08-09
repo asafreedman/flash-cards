@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  cards        Card[]
+}
+
+model Card {
+  id        Int       @id @default(autoincrement())
+  front     String    @db.Text
+  back      String    @db.Text
+  category  String    @default("Custom")
+  userId    Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  stat      CardStat?
+  reviews   CardReview[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([userId])
+}
+
+model CardStat {
+  id             Int       @id @default(autoincrement())
+  cardId         Int       @unique
+  correct        Int       @default(0)
+  incorrect      Int       @default(0)
+  lastReviewedAt DateTime?
+  srsIntervalDays Int      @default(0)
+  srsEase         Float    @default(2.5)
+  srsRepetitions  Int      @default(0)
+  dueAt           DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  card           Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([lastReviewedAt])
+  @@index([dueAt])
+}
+
+model CardReview {
+  id              Int      @id @default(autoincrement())
+  cardId          Int
+  wasCorrect      Boolean
+  reviewedAt      DateTime @default(now())
+  srsIntervalDays Int      @default(0)
+  srsRepetitions  Int      @default(0)
+  dueAt           DateTime?
+  card            Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, reviewedAt])
+  @@index([reviewedAt])
+}

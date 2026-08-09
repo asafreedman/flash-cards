@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+:root {
+  --color-canvas: #f6f2e9;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #fdfaf4;
+  --color-text-strong: #1f2933;
+  --color-text-muted: #506173;
+  --color-line-soft: #d8ddd1;
+  --color-accent-mint: #cae9de;
+  --color-accent-mint-strong: #2d5f4d;
+  --color-accent-sky: #d8e4ff;
+  --color-accent-sky-strong: #36579c;
+
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --radius-card: 0.75rem;
+  --radius-panel: 1rem;
+  --radius-pill: 999px;
+
+  --tracking-caps: 0.16em;
+  --motion-micro: 150ms;
+  --motion-rise: 400ms;
+
+  --panel-background: color-mix(in oklab, var(--color-surface), var(--color-accent-mint) 8%);
+
+  /* Compatibility aliases while moving legacy names to semantic tokens. */
+  --background: var(--color-canvas);
+  --foreground: var(--color-text-strong);
+  --ink-strong: var(--color-text-strong);
+  --ink-muted: var(--color-text-muted);
+  --surface: var(--color-surface);
+  --surface-subtle: var(--color-surface-subtle);
+  --line-soft: var(--color-line-soft);
+  --accent-1: var(--color-accent-mint);
+  --accent-1-strong: var(--color-accent-mint-strong);
+  --accent-2: var(--color-accent-sky);
+  --accent-2-strong: var(--color-accent-sky-strong);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
+  --font-display: var(--font-heading);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), "Trebuchet MS", sans-serif;
+}
+
+.font-heading {
+  font-family: var(--font-heading), "Georgia", serif;
+}
+
+.card-panel {
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-panel);
+  padding: 1.2rem;
+  box-shadow: 0 2px 14px rgba(26, 40, 55, 0.06);
+}
+
+.pill-button {
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-pill);
+  padding: 0.5rem 0.95rem;
+  background: var(--color-surface);
+  color: var(--color-text-strong);
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: transform var(--motion-micro) ease, background-color var(--motion-micro) ease;
+}
+
+.pill-button:hover {
+  transform: translateY(-1px);
+  background: var(--color-accent-sky);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
