@@ -78,6 +78,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const message = error instanceof Error ? error.message : "";
+    if (/denied|permission|insufficient privilege/i.test(message)) {
+      console.error("Register failed due to database permissions.", error);
+      return NextResponse.json(
+        { error: "Database user does not have permission to create users." },
+        { status: 500 }
+      );
+    }
+
+    if (/AUTH_JWT_SECRET/i.test(message)) {
+      console.error("Register failed due to missing auth secret.", error);
+      return NextResponse.json(
+        { error: "Server auth configuration is missing." },
+        { status: 500 }
+      );
+    }
+
+    console.error("Register failed.", error);
+
     return NextResponse.json({ error: "Unable to create account." }, { status: 500 });
   }
 }
