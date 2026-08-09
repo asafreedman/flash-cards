@@ -5,19 +5,11 @@ phases:
     commands:
       - test -n "$DATABASE_URL" || { echo "Missing DATABASE_URL secret in migrate environment"; exit 1; }
       - test -f "imagedefinitions.json" || { echo "Missing imagedefinitions.json from build stage"; exit 1; }
-      - IMAGE_URI="$(python3 - <<'PY'
-import json
-with open('imagedefinitions.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
-if not data or 'imageUri' not in data[0]:
-    raise SystemExit('imagedefinitions.json missing imageUri')
-print(data[0]['imageUri'])
-PY
-        )"
+      - IMAGE_URI=$(jq -r '.[0].imageUri // empty' imagedefinitions.json)
       - test -n "$IMAGE_URI" || { echo "Unable to resolve IMAGE_URI"; exit 1; }
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${ECR_REPOSITORY_URI%/*}"
       - docker pull "$IMAGE_URI"
   build:
     commands:
-      - echo Running prisma migrate deploy from built image
+      - echo "Running prisma migrate deploy from built image"
       - docker run --rm -e DATABASE_URL="$DATABASE_URL" "$IMAGE_URI" sh -lc "npx --no-install prisma migrate deploy"
