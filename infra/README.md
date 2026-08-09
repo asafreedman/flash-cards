@@ -14,7 +14,7 @@ This directory deploys `flash-cards` to AWS with low-cost defaults and least-pri
 ## Cost and Security Defaults
 
 - ECS tasks run in public subnets with security-group ingress restricted to ALB only
-- No NAT gateway (reduces fixed monthly cost)
+- One NAT gateway provides outbound internet egress for private build subnets used by migration jobs
 - RDS is private and only reachable from ECS security group
 - RDS uses a custom PostgreSQL parameter group tuned for small instances (unless disabled)
 - IAM roles are scoped to required actions; secret read is restricted to a single secret ARN
@@ -26,7 +26,7 @@ This directory deploys `flash-cards` to AWS with low-cost defaults and least-pri
 These are rough planning estimates for the Terraform defaults in this folder, assuming 730 hours/month, low traffic, and on-demand pricing.
 
 Cost estimate last reviewed: 2026-08-09
-Cost review notes: Re-reviewed after adding small-instance PostgreSQL parameter tuning and preserving existing infra cost assumptions.
+Cost review notes: Updated for NAT-backed private build subnets and source-based pipeline migration step.
 
 ### Baseline (typical low-traffic production)
 
@@ -41,11 +41,12 @@ Cost review notes: Re-reviewed after adding small-instance PostgreSQL parameter 
 | CloudWatch logs | Light logs with retention cap | $1 - $5 |
 | CodePipeline | 1 active pipeline | ~$1 |
 | CodeBuild | Small build minutes (low commit volume) | ~$1 - $8 |
+| NAT gateway | 1 NAT gateway + light data processing | $32 - $40 |
 | S3 artifacts | Small pipeline artifacts | <$1 |
 | Route53 DNS record | Alias A record in existing zone | ~$0 |
 | ACM public cert | DNS validated cert | $0 |
 
-Estimated baseline total: about $51 - $75 per month.
+Estimated baseline total: about $83 - $115 per month.
 
 ### Autoscaling impact
 
@@ -58,6 +59,7 @@ Estimated baseline total: about $51 - $75 per month.
 - Data transfer out to the internet can materially increase costs at higher traffic.
 - Heavy ALB request volume or high concurrent connections increases LCU charges.
 - Frequent commits that trigger image builds can noticeably increase CodeBuild usage charges.
+- NAT data processing and internet egress from build jobs can increase network costs.
 
 ### Why this setup is secure-by-default
 
@@ -102,9 +104,9 @@ terraform apply
 
 Migration stage notes:
 
-- `Migrate` runs `prisma migrate deploy` from the already built app image before approval/deploy.
+- `Migrate` runs `npm ci` and `prisma migrate deploy` directly from the source artifact before approval/deploy.
 - `DATABASE_URL` is injected from Secrets Manager using the same key name used by ECS runtime.
-- Migration CodeBuild runs inside the VPC to reach private RDS and pulls the image from ECR using VPC endpoints (no NAT required for this step).
+- Migration CodeBuild runs in private build subnets and uses NAT egress for package downloads.
 
 ## Notes
 

@@ -241,12 +241,6 @@ resource "aws_codebuild_project" "migrate" {
     image                       = "aws/codebuild/standard:7.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
-    privileged_mode             = true
-
-    environment_variable {
-      name  = "ECR_REPOSITORY_URI"
-      value = aws_ecr_repository.app.repository_url
-    }
 
     environment_variable {
       name  = "DATABASE_URL"
@@ -257,7 +251,7 @@ resource "aws_codebuild_project" "migrate" {
 
   vpc_config {
     vpc_id = aws_vpc.main.id
-    subnets = [for s in aws_subnet.public : s.id]
+    subnets = [for s in aws_subnet.build : s.id]
     security_group_ids = [aws_security_group.ecs.id]
   }
 
@@ -425,7 +419,7 @@ resource "aws_codepipeline" "app" {
       owner           = "AWS"
       provider        = "CodeBuild"
       version         = "1"
-      input_artifacts = ["build_output"]
+      input_artifacts = ["source_output"]
 
       configuration = {
         ProjectName = aws_codebuild_project.migrate[0].name
