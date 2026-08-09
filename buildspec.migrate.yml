@@ -10,7 +10,8 @@ phases:
       - echo "Resolved image URI: $IMAGE_URI"
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${ECR_REPOSITORY_URI%/*}"
       - docker pull "$IMAGE_URI"
-      - docker image inspect "$IMAGE_URI" --format 'Pulled image digest: {{index .RepoDigests 0}}'
+      - IMAGE_DIGEST=$(docker image inspect "$IMAGE_URI" --format '{{index .RepoDigests 0}}')
+      - echo "Pulled image digest: $IMAGE_DIGEST"
   build:
     commands:
       - echo "Running migration preflight checks inside container"
