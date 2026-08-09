@@ -12,5 +12,7 @@ phases:
       - 'npm ci'
   build:
     commands:
+      - 'echo "Ensuring schema/table privileges for the migration role"'
+      - 'printf "%s\n" "GRANT USAGE ON SCHEMA public TO CURRENT_USER;" "GRANT CREATE ON SCHEMA public TO CURRENT_USER;" "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO CURRENT_USER;" "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO CURRENT_USER;" "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO CURRENT_USER;" "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO CURRENT_USER;" | npx prisma db execute --stdin --schema=./prisma/schema.prisma'
       - 'echo "Running prisma migrate deploy"'
       - 'npx prisma migrate deploy --schema=./prisma/schema.prisma'

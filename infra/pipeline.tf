@@ -325,10 +325,17 @@ resource "aws_iam_policy" "codepipeline" {
         Sid    = "EcsDeploy"
         Effect = "Allow"
         Action = [
+          "ecs:DescribeClusters",
+          "ecs:DescribeServices",
+          "ecs:ListServices",
+          "ecs:DescribeTasks",
+          "ecs:ListTasks",
           "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
+          "ecs:ListTaskDefinitions",
           "ecs:RegisterTaskDefinition",
-          "ecs:UpdateService"
+          "ecs:UpdateService",
+          "ecs:TagResource"
         ]
         Resource = "*"
       },
@@ -344,7 +351,10 @@ resource "aws_iam_policy" "codepipeline" {
         ]
         Condition = {
           StringEquals = {
-            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+            "iam:PassedToService" = [
+              "ecs-tasks.amazonaws.com",
+              "ecs.amazonaws.com"
+            ]
           }
         }
       }
