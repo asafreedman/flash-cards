@@ -1,9 +1,13 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      nodejs: 22
   pre_build:
     commands:
       - 'test -n "$DATABASE_URL" || { echo "Missing DATABASE_URL secret in migrate environment"; exit 1; }'
+      - 'NODE_MAJOR=$(node -p "process.versions.node.split(\".\")[0]") && [ "$NODE_MAJOR" -gt 20 ] || { echo "Node version must be >20. Found: $(node -v)"; exit 1; }'
       - 'echo "Installing dependencies for migration"'
       - 'npm ci'
   build:
