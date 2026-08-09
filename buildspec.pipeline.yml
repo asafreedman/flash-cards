@@ -8,8 +8,7 @@ phases:
       - test -n "$AUTH_JWT_SECRET" || { echo "Missing AUTH_JWT_SECRET secret in build environment"; exit 1; }
       - test -n "$NODE_ENV" || { echo "Missing NODE_ENV secret in build environment"; exit 1; }
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${ECR_REPOSITORY_URI%/*}"
-      - IMAGE_TAG="$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c 1-7)"
-      - if [ -z "$IMAGE_TAG" ]; then IMAGE_TAG="latest"; fi
+      - IMAGE_TAG="latest"
   build:
     commands:
       - echo Building the Docker image

@@ -117,7 +117,7 @@ resource "aws_secretsmanager_secret" "app_config" {
 resource "aws_secretsmanager_secret_version" "app_config" {
   secret_id = aws_secretsmanager_secret.app_config.id
   secret_string = jsonencode({
-    DATABASE_URL    = "postgresql://${local.db_username}:${random_password.db_password.result}@${aws_db_instance.main.address}:5432/${local.db_name}?schema=public"
+    DATABASE_URL    = "postgresql://${urlencode(local.db_username)}:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.address}:5432/${urlencode(local.db_name)}?schema=public"
     AUTH_JWT_SECRET = random_password.jwt_secret.result
     NODE_ENV        = "production"
   })
