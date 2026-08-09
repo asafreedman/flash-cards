@@ -9,13 +9,14 @@ This directory deploys `flash-cards` to AWS with low-cost defaults and least-pri
 - RDS PostgreSQL (private)
 - Secrets Manager for `DATABASE_URL` and `AUTH_JWT_SECRET`
 - ECR repository for app images
-- Optional CI/CD pipeline (GitHub source -> CodeBuild -> Manual approval -> ECS deploy)
+- Optional CI/CD pipeline (GitHub source -> Build -> Migrate -> Manual approval -> ECS deploy)
 
 ## Cost and Security Defaults
 
 - ECS tasks run in public subnets with security-group ingress restricted to ALB only
 - No NAT gateway (reduces fixed monthly cost)
 - RDS is private and only reachable from ECS security group
+- RDS uses a custom PostgreSQL parameter group tuned for small instances (unless disabled)
 - IAM roles are scoped to required actions; secret read is restricted to a single secret ARN
 - CodePipeline `iam:PassRole` is restricted to ECS task roles and `ecs-tasks.amazonaws.com`
 - CloudWatch log retention is capped
@@ -24,8 +25,8 @@ This directory deploys `flash-cards` to AWS with low-cost defaults and least-pri
 
 These are rough planning estimates for the Terraform defaults in this folder, assuming 730 hours/month, low traffic, and on-demand pricing.
 
-Cost estimate last reviewed: 2026-08-10
-Cost review notes: Updated for public ECS tasks with ALB-only ingress, no NAT gateway, and optional CI/CD pipeline costs.
+Cost estimate last reviewed: 2026-08-09
+Cost review notes: Re-reviewed after adding small-instance PostgreSQL parameter tuning and preserving existing infra cost assumptions.
 
 ### Baseline (typical low-traffic production)
 
@@ -99,9 +100,16 @@ terraform apply
 6. Push to your configured branch to trigger the pipeline.
 7. In CodePipeline, approve the `Approve` stage to continue deployment to ECS.
 
+Migration stage notes:
+
+- `Migrate` runs `prisma migrate deploy` from the already built app image before approval/deploy.
+- `DATABASE_URL` is injected from Secrets Manager using the same key name used by ECS runtime.
+- Migration CodeBuild runs inside the VPC to reach private RDS and pulls the image from ECR using VPC endpoints (no NAT required for this step).
+
 ## Notes
 
 - The app container expects these runtime secrets: `DATABASE_URL`, `AUTH_JWT_SECRET`, `NODE_ENV`.
 - This configuration intentionally uses single-AZ RDS for lower cost. Enable `db_multi_az = true` for higher availability.
+- DB tuning defaults for small instances are controlled by `enable_small_instance_db_tuning`, `db_parameter_group_family`, and `db_max_connections`.
 - `/stats` route redirects to `/cards` in application code.
 - Pipeline build spec is at `buildspec.pipeline.yml` and emits `imagedefinitions.json` for ECS deploy.

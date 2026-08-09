@@ -1,8 +1,8 @@
 # Required: replace with an image built from this repository.
-app_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/flash-cards-prod-app:2026-08-09"
+app_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/flash-cards-prod-app:latest"
 
 # Optional CI/CD pipeline (GitHub -> CodeBuild -> ECS deploy)
-enable_ci_pipeline = true
+enable_ci_pipeline = false
 github_repo_owner  = "your-github-owner"
 github_repo_name   = "flash-cards"
 github_branch      = "main"
@@ -18,7 +18,11 @@ hosted_zone_name = "asafreedman.com"
 # Cost/scale tuning
 desired_count = 1
 min_count     = 1
-max_count     = 3
+max_count     = 2
 
 # Optional resiliency tradeoff (higher cost)
 db_multi_az = false
+
+# Optional: small-instance PostgreSQL tuning
+enable_small_instance_db_tuning = true
+db_max_connections              = 90

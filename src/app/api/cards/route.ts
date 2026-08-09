@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { readJsonObject } from "@/lib/api-validation";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 const MAX_FIELD_LENGTH = 5000;
 const MAX_CATEGORY_LENGTH = 100;
 
 export async function GET() {
   try {
+    const prisma = getPrisma();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,6 +34,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const prisma = getPrisma();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

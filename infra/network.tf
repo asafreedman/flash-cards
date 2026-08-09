@@ -89,3 +89,81 @@ resource "aws_route_table_association" "db" {
   subnet_id      = each.value.id
   route_table_id = aws_route_table.db.id
 }
+
+resource "aws_security_group" "vpce" {
+  name        = "${local.name_prefix}-vpce-sg"
+  description = "VPC endpoint ingress from ECS/CodeBuild security group"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "HTTPS from ECS/CodeBuild SG"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-vpce-sg"
+  })
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids = [
+    aws_route_table.public.id,
+    aws_route_table.db.id,
+  ]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-s3-endpoint"
+  })
+}
+
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [for s in aws_subnet.public : s.id]
+  security_group_ids  = [aws_security_group.vpce.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-ecr-api-endpoint"
+  })
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [for s in aws_subnet.public : s.id]
+  security_group_ids  = [aws_security_group.vpce.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-ecr-dkr-endpoint"
+  })
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [for s in aws_subnet.public : s.id]
+  security_group_ids  = [aws_security_group.vpce.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-secretsmanager-endpoint"
+  })
+}

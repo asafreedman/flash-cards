@@ -13,10 +13,71 @@ resource "aws_db_subnet_group" "main" {
   })
 }
 
+resource "aws_db_parameter_group" "small_instance" {
+  count = var.enable_small_instance_db_tuning ? 1 : 0
+
+  name_prefix = "${local.name_prefix}-pg-small-"
+  family = var.db_parameter_group_family
+
+  # Keep connection pressure predictable and preserve memory headroom on micro/small instances.
+  parameter {
+    name         = "max_connections"
+    value        = tostring(var.db_max_connections)
+    apply_method = "pending-reboot"
+  }
+
+  # Conservative per-session memory defaults for small nodes.
+  parameter {
+    name  = "work_mem"
+    value = "2048"
+  }
+
+  parameter {
+    name  = "maintenance_work_mem"
+    value = "65536"
+  }
+
+  # More proactive vacuum/analyze cadence to reduce bloat in long-running small DBs.
+  parameter {
+    name  = "autovacuum_vacuum_scale_factor"
+    value = "0.05"
+  }
+
+  parameter {
+    name  = "autovacuum_analyze_scale_factor"
+    value = "0.02"
+  }
+
+  parameter {
+    name  = "autovacuum_naptime"
+    value = "30"
+  }
+
+  # Better fit for gp3-backed storage than legacy spinning-disk defaults.
+  parameter {
+    name  = "random_page_cost"
+    value = "1.1"
+  }
+
+  # Prevent forgotten idle transactions from holding locks indefinitely.
+  parameter {
+    name  = "idle_in_transaction_session_timeout"
+    value = "60000"
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-pg-small"
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_db_instance" "main" {
   identifier                 = "${replace(local.name_prefix, "-", "")}-pg"
   engine                     = "postgres"
-  engine_version             = "16.3"
+  engine_version             = var.db_engine_version
   instance_class             = var.db_instance_class
   db_name                    = local.db_name
   username                   = local.db_username
@@ -32,6 +93,7 @@ resource "aws_db_instance" "main" {
   multi_az                   = var.db_multi_az
   backup_retention_period    = var.db_backup_retention_days
   auto_minor_version_upgrade = true
+  parameter_group_name       = var.enable_small_instance_db_tuning ? aws_db_parameter_group.small_instance[0].name : null
 
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-postgres"

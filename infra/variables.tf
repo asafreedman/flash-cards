@@ -75,6 +75,12 @@ variable "db_instance_class" {
   default     = "db.t4g.micro"
 }
 
+variable "db_engine_version" {
+  description = "PostgreSQL engine version for RDS."
+  type        = string
+  default     = "17"
+}
+
 variable "db_allocated_storage" {
   description = "Initial allocated storage in GiB."
   type        = number
@@ -97,6 +103,24 @@ variable "db_backup_retention_days" {
   description = "RDS backup retention in days."
   type        = number
   default     = 7
+}
+
+variable "enable_small_instance_db_tuning" {
+  description = "Attach a custom RDS parameter group with conservative PostgreSQL settings for small instances."
+  type        = bool
+  default     = true
+}
+
+variable "db_parameter_group_family" {
+  description = "RDS DB parameter group family for PostgreSQL engine versions."
+  type        = string
+  default     = "postgres17"
+}
+
+variable "db_max_connections" {
+  description = "Maximum database connections for small-instance tuning."
+  type        = number
+  default     = 90
 }
 
 variable "log_retention_days" {

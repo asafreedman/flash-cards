@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { parsePositiveInt, readJsonObject } from "@/lib/api-validation";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 const MAX_FIELD_LENGTH = 5000;
 const MAX_CATEGORY_LENGTH = 100;
@@ -12,6 +12,7 @@ type Params = {
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
+    const prisma = getPrisma();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -79,6 +80,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   try {
+    const prisma = getPrisma();
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

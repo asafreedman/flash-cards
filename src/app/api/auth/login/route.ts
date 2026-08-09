@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { setAuthCookie, signAuthToken, verifyPassword } from "@/lib/auth";
 import { readJsonObject } from "@/lib/api-validation";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 const MAX_EMAIL_LENGTH = 320;
 const MIN_PASSWORD_LENGTH = 6;
 
 export async function POST(request: Request) {
   try {
+    const prisma = getPrisma();
     const body = await readJsonObject(request);
     if (!body) {
       return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });

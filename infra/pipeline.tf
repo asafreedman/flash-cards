@@ -124,6 +124,29 @@ resource "aws_iam_policy" "codebuild" {
           "ecr:UploadLayerPart"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "ReadAppConfigSecret"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.app_config.arn
+      },
+      {
+        Sid    = "CodeBuildVpcNetworking"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateNetworkInterface",
+          "ec2:DeleteNetworkInterface",
+          "ec2:DescribeDhcpOptions",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVpcs"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -169,6 +192,68 @@ resource "aws_codebuild_project" "app" {
       name  = "ECS_CONTAINER_NAME"
       value = "app"
     }
+
+    # Keep build-time secret names aligned with ECS runtime secret names.
+    environment_variable {
+      name  = "DATABASE_URL"
+      type  = "SECRETS_MANAGER"
+      value = "${aws_secretsmanager_secret.app_config.arn}:DATABASE_URL"
+    }
+
+    environment_variable {
+      name  = "AUTH_JWT_SECRET"
+      type  = "SECRETS_MANAGER"
+      value = "${aws_secretsmanager_secret.app_config.arn}:AUTH_JWT_SECRET"
+    }
+
+    environment_variable {
+      name  = "NODE_ENV"
+      type  = "SECRETS_MANAGER"
+      value = "${aws_secretsmanager_secret.app_config.arn}:NODE_ENV"
+    }
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_codebuild_project" "migrate" {
+  count = var.enable_ci_pipeline ? 1 : 0
+
+  name         = "${local.name_prefix}-db-migrate"
+  service_role = aws_iam_role.codebuild[0].arn
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "buildspec.migrate.yml"
+  }
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:7.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "ECR_REPOSITORY_URI"
+      value = aws_ecr_repository.app.repository_url
+    }
+
+    environment_variable {
+      name  = "DATABASE_URL"
+      type  = "SECRETS_MANAGER"
+      value = "${aws_secretsmanager_secret.app_config.arn}:DATABASE_URL"
+    }
+  }
+
+  vpc_config {
+    vpc_id = aws_vpc.main.id
+    subnets = [for s in aws_subnet.public : s.id]
+    security_group_ids = [aws_security_group.ecs.id]
   }
 
   tags = local.common_tags
@@ -232,7 +317,10 @@ resource "aws_iam_policy" "codepipeline" {
           "codebuild:BatchGetBuilds",
           "codebuild:StartBuild"
         ]
-        Resource = aws_codebuild_project.app[0].arn
+        Resource = [
+          aws_codebuild_project.app[0].arn,
+          aws_codebuild_project.migrate[0].arn
+        ]
       },
       {
         Sid    = "EcsDeploy"
@@ -319,6 +407,23 @@ resource "aws_codepipeline" "app" {
 
       configuration = {
         ProjectName = aws_codebuild_project.app[0].name
+      }
+    }
+  }
+
+  stage {
+    name = "Migrate"
+
+    action {
+      name            = "PrismaMigrateDeploy"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      version         = "1"
+      input_artifacts = ["build_output"]
+
+      configuration = {
+        ProjectName = aws_codebuild_project.migrate[0].name
       }
     }
   }

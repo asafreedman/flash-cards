@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { compare, hash } from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 const AUTH_COOKIE_NAME = "flashcards_auth";
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 14;
@@ -62,6 +62,7 @@ export async function getCurrentUser() {
     return null;
   }
 
+  const prisma = getPrisma();
   return prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, email: true, name: true },
