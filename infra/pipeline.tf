@@ -116,8 +116,10 @@ resource "aws_iam_policy" "codebuild" {
         Sid    = "EcrPushPull"
         Effect = "Allow"
         Action = [
+          "ecr:BatchGetImage",
           "ecr:BatchCheckLayerAvailability",
           "ecr:CompleteLayerUpload",
+          "ecr:GetDownloadUrlForLayer",
           "ecr:GetAuthorizationToken",
           "ecr:InitiateLayerUpload",
           "ecr:PutImage",

@@ -12,4 +12,4 @@ phases:
   build:
     commands:
       - echo "Running prisma migrate deploy from built image"
-      - docker run --rm -e DATABASE_URL="$DATABASE_URL" "$IMAGE_URI" sh -lc "npx --no-install prisma migrate deploy"
+      - docker run --rm -e DATABASE_URL="$DATABASE_URL" "$IMAGE_URI" sh -lc "./node_modules/.bin/prisma --version && ./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma"
