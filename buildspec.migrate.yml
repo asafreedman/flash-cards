@@ -7,9 +7,27 @@ phases:
       - test -f "imagedefinitions.json" || { echo "Missing imagedefinitions.json from build stage"; exit 1; }
       - IMAGE_URI=$(jq -r '.[0].imageUri // empty' imagedefinitions.json)
       - test -n "$IMAGE_URI" || { echo "Unable to resolve IMAGE_URI"; exit 1; }
+      - echo "Resolved image URI: $IMAGE_URI"
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${ECR_REPOSITORY_URI%/*}"
       - docker pull "$IMAGE_URI"
+      - docker image inspect "$IMAGE_URI" --format 'Pulled image digest: {{index .RepoDigests 0}}'
   build:
     commands:
-      - echo "Running prisma migrate deploy from built image"
-      - docker run --rm -e DATABASE_URL="$DATABASE_URL" "$IMAGE_URI" sh -lc "./node_modules/.bin/prisma --version && ./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma"
+      - echo "Running migration preflight checks inside container"
+      - |
+        docker run --rm --entrypoint sh "$IMAGE_URI" -lc '
+          set -eux
+          node -v
+          test -x ./node_modules/.bin/prisma
+          test -f ./prisma/schema.prisma
+          ./node_modules/.bin/prisma --version
+        '
+      - echo "Running prisma migrate deploy with debug output"
+      - |
+        docker run --rm \
+          -e DATABASE_URL="$DATABASE_URL" \
+          -e PRISMA_HIDE_UPDATE_MESSAGE=true \
+          -e RUST_BACKTRACE=1 \
+          -e DEBUG="prisma:*" \
+          "$IMAGE_URI" \
+          sh -lc 'set -eux; ./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma'
