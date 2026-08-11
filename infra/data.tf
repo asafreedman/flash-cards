@@ -123,10 +123,11 @@ resource "aws_secretsmanager_secret" "app_config" {
 resource "aws_secretsmanager_secret_version" "app_config" {
   secret_id = aws_secretsmanager_secret.app_config.id
   secret_string = jsonencode({
-    DATABASE_ADMIN_URL = "postgresql://${urlencode(local.db_username)}:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.address}:5432/${urlencode(local.db_name)}?schema=public"
+    DATABASE_ADMIN_URL = "postgresql://${urlencode(local.db_username)}:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.address}:5432/${urlencode(local.db_name)}?schema=public&options=${urlencode("-c app.app_db_username=${local.db_app_user} -c app.app_db_password=${random_password.db_app_password.result}")}"
     DATABASE_URL       = "postgresql://${urlencode(local.db_app_user)}:${urlencode(random_password.db_app_password.result)}@${aws_db_instance.main.address}:5432/${urlencode(local.db_name)}?schema=public"
     APP_DB_USERNAME    = local.db_app_user
     APP_DB_PASSWORD    = random_password.db_app_password.result
+    RESET_MIGRATIONS   = ""
     AUTH_JWT_SECRET    = random_password.jwt_secret.result
     NODE_ENV           = "production"
   })

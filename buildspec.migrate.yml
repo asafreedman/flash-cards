@@ -7,14 +7,11 @@ phases:
   pre_build:
     commands:
       - 'test -n "$DATABASE_ADMIN_URL" || { echo "Missing DATABASE_ADMIN_URL secret in migrate environment"; exit 1; }'
-      - 'test -n "$APP_DB_USERNAME" || { echo "Missing APP_DB_USERNAME secret in migrate environment"; exit 1; }'
-      - 'test -n "$APP_DB_PASSWORD" || { echo "Missing APP_DB_PASSWORD secret in migrate environment"; exit 1; }'
+      - 'test -n "$RESET_MIGRATIONS" || true'
       - 'NODE_MAJOR=$(node -p "process.versions.node.split(\".\")[0]") && [ "$NODE_MAJOR" -gt 20 ] || { echo "Node version must be >20. Found: $(node -v)"; exit 1; }'
       - 'export DATABASE_URL="$DATABASE_ADMIN_URL"'
-      - 'export PGOPTIONS="-c app.app_db_username=$APP_DB_USERNAME -c app.app_db_password=$APP_DB_PASSWORD"'
       - 'echo "Installing dependencies for migration"'
       - 'npm ci'
   build:
     commands:
-      - 'echo "Running prisma migrate deploy"'
-      - 'npx prisma migrate deploy --schema=./prisma/schema.prisma'
+      - 'if [ -n "$RESET_MIGRATIONS" ]; then echo "RESET_MIGRATIONS is set; resetting and replaying all migrations"; npx prisma migrate reset --force --skip-generate --skip-seed --schema=./prisma/schema.prisma; else echo "Running prisma migrate deploy"; npx prisma migrate deploy --schema=./prisma/schema.prisma; fi'
