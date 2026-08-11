@@ -1,19 +1,15 @@
 DO $$
 DECLARE
-  app_role text := nullif(current_setting('app.app_db_username', true), '');
+  app_role text := coalesce(nullif(current_setting('app.app_db_username', true), ''), 'flashcards_app');
   app_password text := nullif(current_setting('app.app_db_password', true), '');
 BEGIN
-  IF app_role IS NULL THEN
-    RAISE EXCEPTION 'Missing required database setting app.app_db_username for role grants migration';
-  END IF;
-
-  IF app_password IS NULL THEN
-    RAISE EXCEPTION 'Missing required database setting app.app_db_password for role grants migration';
-  END IF;
-
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = app_role) THEN
+    IF app_password IS NULL THEN
+      RAISE EXCEPTION 'Role % does not exist and app.app_db_password was not provided; set APP_DB_PASSWORD via migration environment or create role first', app_role;
+    END IF;
+
     EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', app_role, app_password);
-  ELSE
+  ELSIF app_password IS NOT NULL THEN
     EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', app_role, app_password);
   END IF;
 
