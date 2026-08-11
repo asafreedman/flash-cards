@@ -81,6 +81,12 @@ variable "db_engine_version" {
   default     = "17"
 }
 
+variable "db_app_username" {
+  description = "Application database role username (separate from RDS admin user)."
+  type        = string
+  default     = "flashcards_app"
+}
+
 variable "db_allocated_storage" {
   description = "Initial allocated storage in GiB."
   type        = number

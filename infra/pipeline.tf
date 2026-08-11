@@ -243,9 +243,21 @@ resource "aws_codebuild_project" "migrate" {
     image_pull_credentials_type = "CODEBUILD"
 
     environment_variable {
-      name  = "DATABASE_URL"
+      name  = "DATABASE_ADMIN_URL"
       type  = "SECRETS_MANAGER"
-      value = "${aws_secretsmanager_secret.app_config.arn}:DATABASE_URL"
+      value = "${aws_secretsmanager_secret.app_config.arn}:DATABASE_ADMIN_URL"
+    }
+
+    environment_variable {
+      name  = "APP_DB_USERNAME"
+      type  = "SECRETS_MANAGER"
+      value = "${aws_secretsmanager_secret.app_config.arn}:APP_DB_USERNAME"
+    }
+
+    environment_variable {
+      name  = "APP_DB_PASSWORD"
+      type  = "SECRETS_MANAGER"
+      value = "${aws_secretsmanager_secret.app_config.arn}:APP_DB_PASSWORD"
     }
   }
 

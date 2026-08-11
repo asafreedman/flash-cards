@@ -4,6 +4,12 @@ resource "random_password" "db_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+resource "random_password" "db_app_password" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
 resource "aws_db_subnet_group" "main" {
   name       = "${local.name_prefix}-db-subnets"
   subnet_ids = [for s in aws_subnet.db : s.id]
@@ -107,18 +113,21 @@ resource "random_password" "jwt_secret" {
 }
 
 resource "aws_secretsmanager_secret" "app_config" {
-  name = "${local.name_prefix}/app-config"
+  name = "${local.name_prefix}/app"
 
   tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-app-config"
+    Name = "${local.name_prefix}-app"
   })
 }
 
 resource "aws_secretsmanager_secret_version" "app_config" {
   secret_id = aws_secretsmanager_secret.app_config.id
   secret_string = jsonencode({
-    DATABASE_URL    = "postgresql://${urlencode(local.db_username)}:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.address}:5432/${urlencode(local.db_name)}?schema=public"
-    AUTH_JWT_SECRET = random_password.jwt_secret.result
-    NODE_ENV        = "production"
+    DATABASE_ADMIN_URL = "postgresql://${urlencode(local.db_username)}:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.address}:5432/${urlencode(local.db_name)}?schema=public"
+    DATABASE_URL       = "postgresql://${urlencode(local.db_app_user)}:${urlencode(random_password.db_app_password.result)}@${aws_db_instance.main.address}:5432/${urlencode(local.db_name)}?schema=public"
+    APP_DB_USERNAME    = local.db_app_user
+    APP_DB_PASSWORD    = random_password.db_app_password.result
+    AUTH_JWT_SECRET    = random_password.jwt_secret.result
+    NODE_ENV           = "production"
   })
 }

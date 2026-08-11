@@ -3,8 +3,9 @@ locals {
 
   zone_name = trimsuffix(var.hosted_zone_name, ".")
 
-  db_name     = "flashcards"
-  db_username = "flashcards"
+  db_name      = "flashcards"
+  db_username  = "flashcards"
+  db_app_user  = var.db_app_username
 
   common_tags = merge(
     {
